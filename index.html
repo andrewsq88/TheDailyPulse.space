@@ -107,22 +107,29 @@
                     <div class="animate-pulse bg-white p-4 rounded-xl shadow h-64"></div>
                     <div class="animate-pulse bg-white p-4 rounded-xl shadow h-64"></div>
                 </div>
+
+                <div class="flex justify-center mt-8">
+                    <iframe id="adsterra-infeed"
+                        style="width:300px;height:250px;border:none;overflow:hidden;"
+                        scrolling="no"
+                        frameborder="0"
+                        marginwidth="0"
+                        marginheight="0">
+                    </iframe>
+                </div>
             </main>
 
             <aside class="lg:col-span-4 space-y-8">
 
                 <div class="sticky top-24 space-y-8">
                     <div class="flex justify-center">
-                        <script>
-                            atOptions = {
-                                'key' : '198695a08a60e90b59f6a5370452a9fb',
-                                'format' : 'iframe',
-                                'height' : 600,
-                                'width' : 160,
-                                'params' : {}
-                            };
-                        </script>
-                        <script src="https://www.highperformanceformat.com/198695a08a60e90b59f6a5370452a9fb/invoke.js"></script>
+                        <iframe id="adsterra-sidebar"
+                            style="width:160px;height:600px;border:none;overflow:hidden;"
+                            scrolling="no"
+                            frameborder="0"
+                            marginwidth="0"
+                            marginheight="0">
+                        </iframe>
                     </div>
                     <div id="subscription-box" class="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 rounded-xl p-6 text-white shadow-xl">
                         <h3 class="font-bold text-lg mb-2">Get Daily Alerts</h3>
@@ -594,6 +601,23 @@
                 container.appendChild(card);
             });
         }
+    </script>
+
+    <script>
+        (function() {
+            function loadAdsterraInIframe(iframeId, adKey, width, height) {
+                var iframe = document.getElementById(iframeId);
+                if (!iframe) return;
+                var html = '<!DOCTYPE html><html><head><style>*{margin:0;padding:0;overflow:hidden;}</style></head><body>'
+                    + '<script>atOptions={"key":"' + adKey + '","format":"iframe","height":' + height + ',"width":' + width + ',"params":{}};' + '<\/script>'
+                    + '<script src="https://www.highperformanceformat.com/' + adKey + '/invoke.js"><\/script>'
+                    + '</body></html>';
+                iframe.srcdoc = html;
+            }
+
+            loadAdsterraInIframe('adsterra-sidebar', '28702247', 160, 600);
+            loadAdsterraInIframe('adsterra-infeed', '28702329', 300, 250);
+        })();
     </script>
 </body>
 </html>
