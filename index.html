@@ -69,7 +69,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center gap-2">
-                    <img src="/public/DP 1st Draft Logo.jpg" alt="The Daily Pulse Logo" class="w-10 h-10 object-contain">
+                    <img src="/dp-logo.jpg" alt="The Daily Pulse Logo" class="w-10 h-10 object-contain">
                     <div>
                         <h1 class="text-xl font-bold tracking-tight text-slate-900 leading-none">The Daily Pulse</h1>
                         <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Live Aggregator</p>
@@ -106,28 +106,16 @@
                     <div class="animate-pulse bg-white p-4 rounded-xl shadow h-64"></div>
                 </div>
 
-                <div class="hidden md:flex justify-center mt-8 overflow-hidden">
-                    <iframe id="adsterra-infeed"
-                        style="width:728px;height:90px;border:none;overflow:hidden;"
-                        scrolling="no"
-                        frameborder="0"
-                        marginwidth="0"
-                        marginheight="0">
-                    </iframe>
+                <div class="hidden md:flex justify-center mt-8 overflow-hidden" style="min-height:90px;">
+                    <div id="adsterra-infeed"></div>
                 </div>
             </main>
 
             <aside class="lg:col-span-4 space-y-8">
 
                 <div class="sticky top-24 space-y-8">
-                    <div class="flex justify-center">
-                        <iframe id="adsterra-sidebar"
-                            style="width:160px;height:600px;border:none;overflow:hidden;"
-                            scrolling="no"
-                            frameborder="0"
-                            marginwidth="0"
-                            marginheight="0">
-                        </iframe>
+                    <div class="flex justify-center" style="min-height:600px;">
+                        <div id="adsterra-sidebar"></div>
                     </div>
                     <div id="subscription-box" class="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 rounded-xl p-6 text-white shadow-xl">
                         <h3 class="font-bold text-lg mb-2">Get Daily Alerts</h3>
@@ -603,18 +591,21 @@
 
     <script>
         (function() {
-            function loadAdsterraInIframe(iframeId, adKey, width, height) {
-                var iframe = document.getElementById(iframeId);
-                if (!iframe) return;
-                var html = '<!DOCTYPE html><html><head><style>*{margin:0;padding:0;overflow:hidden;}</style></head><body>'
-                    + '<script>atOptions={"key":"' + adKey + '","format":"iframe","height":' + height + ',"width":' + width + ',"params":{}};' + '<\/script>'
-                    + '<script src="https://www.highperformanceformat.com/' + adKey + '/invoke.js"><\/script>'
-                    + '</body></html>';
-                iframe.srcdoc = html;
+            function loadAdsterra(containerId, adKey, width, height) {
+                var container = document.getElementById(containerId);
+                if (!container) return;
+                var conf = document.createElement('script');
+                conf.type = 'text/javascript';
+                conf.innerHTML = 'atOptions = ' + JSON.stringify({key: adKey, format: "iframe", height: height, width: width, params: {}}) + ';';
+                var invoke = document.createElement('script');
+                invoke.type = 'text/javascript';
+                invoke.src = 'https://www.highperformanceformat.com/' + adKey + '/invoke.js';
+                container.appendChild(conf);
+                container.appendChild(invoke);
             }
 
-            loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);
-            loadAdsterraInIframe('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);
+            loadAdsterra('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);
+            loadAdsterra('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);
         })();
     </script>
 </body>
