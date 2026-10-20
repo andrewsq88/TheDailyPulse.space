@@ -246,8 +246,32 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://nkcdbcsdudoaiajivyqk.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rY2RiY3NkdWRvYWlhaml2eXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0NTgxMDksImV4cCI6MjA4MDAzNDEwOX0.86w4MOrzxuZKTUJTElZ4kqD--VHdi6VX3gsq_6SVlVg';
+        const FORMS_ENDPOINT = '/.netlify/functions/forms';
+
+        async function postForm(payload) {
+            const response = await fetch(FORMS_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                data = {};
+            }
+
+            if (!response.ok) {
+                const error = new Error(data.error || 'Request failed');
+                error.code = data.code;
+                throw error;
+            }
+
+            return data;
+        }
 
         function toggleSubscriptionForm() {
             const form = document.getElementById('subscription-form');
@@ -286,37 +310,7 @@
             submitButton.textContent = 'Submitting...';
 
             try {
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/send-subscription-email`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                    },
-                    body: JSON.stringify({ name, email })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to send subscription');
-                }
-
-                const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/newsletter_subscriptions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({ name, email })
-                });
-
-                if (!insertResponse.ok) {
-                    const errorData = await insertResponse.json();
-                    if (errorData.code === '23505') {
-                        throw new Error('This email is already subscribed!');
-                    }
-                    throw new Error('Failed to save subscription');
-                }
+                await postForm({ action: 'subscribe', name, email });
 
                 showMessage('Successfully subscribed! Check your inbox.', 'success');
                 setTimeout(() => {
@@ -401,36 +395,18 @@
             submitButton.textContent = 'Submitting...';
 
             try {
-                const adData = {
+                await postForm({
+                    action: 'advertise',
                     type,
                     company_name: companyName,
                     contact_name: contactName,
                     contact_email: contactEmail,
                     contact_phone: contactPhone || null,
                     website_url: websiteUrl || null,
-                    notes: notes || null
-                };
-
-                if (type === 'product') {
-                    adData.product_name = productName;
-                } else {
-                    adData.services_provided = servicesProvided;
-                }
-
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/advertisements`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify(adData)
+                    notes: notes || null,
+                    product_name: type === 'product' ? productName : null,
+                    services_provided: type === 'service' ? servicesProvided : null
                 });
-
-                if (!response.ok) {
-                    throw new Error('Failed to submit advertisement request');
-                }
 
                 messageDiv.textContent = 'Thank you! Your advertisement request has been submitted successfully. We\'ll contact you soon!';
                 messageDiv.className = 'text-sm p-3 rounded-lg bg-green-100 text-green-700';
