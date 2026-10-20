@@ -1,19 +1,13 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { ExternalLink, Mail, Phone } from 'lucide-react';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 interface Advertisement {
   id: string;
   type: 'product' | 'service';
   company_name: string;
   product_name?: string;
-  contact_name: string;
-  contact_email: string;
+  contact_name?: string;
+  contact_email?: string;
   contact_phone?: string;
   services_provided?: string;
   website_url?: string;
@@ -26,14 +20,10 @@ function App() {
   useEffect(() => {
     const fetchApprovedAds = async () => {
       try {
-        const { data, error } = await supabase
-          .from('advertisements')
-          .select('*')
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setAds(data || []);
+        const response = await fetch('/.netlify/functions/forms?action=list-ads');
+        if (!response.ok) throw new Error('Failed to load advertisements');
+        const payload = await response.json();
+        setAds(Array.isArray(payload.ads) ? payload.ads : []);
       } catch (error) {
         console.error('Error fetching ads:', error);
       } finally {
@@ -85,9 +75,11 @@ function App() {
                   )}
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-slate-600">
-                      <span className="font-medium text-slate-900 mr-2">{ad.contact_name}</span>
-                    </div>
+                    {ad.contact_name && (
+                      <div className="flex items-center text-sm text-slate-600">
+                        <span className="font-medium text-slate-900 mr-2">{ad.contact_name}</span>
+                      </div>
+                    )}
                     {ad.contact_phone && (
                       <div className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
                         <Phone size={16} />
@@ -96,12 +88,14 @@ function App() {
                         </a>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-                      <Mail size={16} />
-                      <a href={`mailto:${ad.contact_email}`} className="hover:underline">
-                        {ad.contact_email}
-                      </a>
-                    </div>
+                    {ad.contact_email && (
+                      <div className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+                        <Mail size={16} />
+                        <a href={`mailto:${ad.contact_email}`} className="hover:underline">
+                          {ad.contact_email}
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {ad.website_url && (

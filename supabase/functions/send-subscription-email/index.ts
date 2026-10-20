@@ -1,10 +1,38 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-};
+const allowedOrigins = new Set([
+  "https://thedailypulse.space",
+  "https://www.thedailypulse.space",
+]);
+
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  const allow = allowedOrigins.has(origin) ? origin : "https://www.thedailypulse.space";
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+    "Vary": "Origin",
+  };
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function cleanField(value: string, max: number) {
+  let cleaned = "";
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    if (code > 31 && code !== 127) cleaned += char;
+  }
+  return cleaned.trim().slice(0, max);
+}
 
 interface SubscriptionRequest {
   name: string;
@@ -12,23 +40,41 @@ interface SubscriptionRequest {
 }
 
 Deno.serve(async (req: Request) => {
+  const headers = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
-      headers: corsHeaders,
+      headers,
     });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      {
+        status: 405,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   }
 
   try {
     const { name, email }: SubscriptionRequest = await req.json();
+    const safeName = typeof name === "string" ? cleanField(name, 200) : "";
+    const safeEmail = typeof email === "string" ? cleanField(email, 320) : "";
+    const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeEmail);
 
-    if (!name || !email) {
+    if (!safeName || !emailLooksValid) {
       return new Response(
-        JSON.stringify({ error: "Name and email are required" }),
+        JSON.stringify({ error: "Name and a valid email are required" }),
         {
           status: 400,
           headers: {
-            ...corsHeaders,
+            ...headers,
             "Content-Type": "application/json",
           },
         }
@@ -39,8 +85,8 @@ Deno.serve(async (req: Request) => {
 New Newsletter Subscription
 ============================
 
-Name: ${name}
-Email: ${email}
+Name: ${safeName}
+Email: ${safeEmail}
 Subscribed at: ${new Date().toISOString()}
 
 ---
@@ -68,10 +114,10 @@ This is an automated notification from The Daily Pulse.
     </div>
     <div class="content">
       <div class="info-row">
-        <span class="label">Name:</span> ${name}
+        <span class="label">Name:</span> ${escapeHtml(safeName)}
       </div>
       <div class="info-row">
-        <span class="label">Email:</span> ${email}
+        <span class="label">Email:</span> ${escapeHtml(safeEmail)}
       </div>
       <div class="info-row">
         <span class="label">Subscribed at:</span> ${new Date().toLocaleString()}
@@ -97,19 +143,17 @@ This is an automated notification from The Daily Pulse.
         body: JSON.stringify({
           from: "The Daily Pulse <onboarding@resend.dev>",
           to: ["nextrendstudios@tuta.io"],
-          subject: `New Newsletter Subscription: ${name}`,
+          subject: `New Newsletter Subscription: ${safeName}`,
           text: emailBody,
           html: emailHtml,
         }),
       });
 
       if (!emailResponse.ok) {
-        const errorData = await emailResponse.text();
-        console.error("Resend API error:", errorData);
+        console.error("Resend API error", emailResponse.status);
       }
     } else {
-      console.log("RESEND_API_KEY not configured. Email would be sent to: nextrendstudios@tuta.io");
-      console.log("Subscription details:", { name, email });
+      console.log("RESEND_API_KEY not configured. Subscription notification was not sent.");
     }
 
     return new Response(
@@ -120,23 +164,22 @@ This is an automated notification from The Daily Pulse.
       {
         status: 200,
         headers: {
-          ...corsHeaders,
+          ...headers,
           "Content-Type": "application/json",
         },
       }
     );
 
-  } catch (error) {
-    console.error("Error processing subscription:", error);
+  } catch {
+    console.error("Error processing subscription");
     return new Response(
       JSON.stringify({ 
-        error: "Failed to process subscription",
-        details: error.message 
+        error: "Failed to process subscription"
       }),
       {
         status: 500,
         headers: {
-          ...corsHeaders,
+          ...headers,
           "Content-Type": "application/json",
         },
       }
