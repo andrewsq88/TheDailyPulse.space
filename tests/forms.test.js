@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { buildAdvertiseRecord, buildSubscribeRecord, handler, toPublicAd } from './forms.js';
+import { buildAdvertiseRecord, buildSubscribeRecord, handler, toPublicAd } from '../netlify/functions/forms.js';
 
 test('subscribe record keeps only name, email, and active status', () => {
   const built = buildSubscribeRecord({
@@ -158,8 +158,8 @@ test('list-ads strips contact fields returned by the database', async () => {
 });
 
 test('tracked pages do not embed a Supabase JWT', () => {
-  const html = readFileSync(new URL('../../index3.html', import.meta.url), 'utf8');
-  const home = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../index3.html', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.equal(html.includes('SUPABASE_ANON_KEY'), false);
   assert.equal(html.includes('eyJ'), false);
   assert.equal(home.includes('SUPABASE_ANON_KEY'), false);

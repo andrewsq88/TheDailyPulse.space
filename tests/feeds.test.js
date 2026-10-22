@@ -11,7 +11,7 @@ import {
   plainText,
   resetFeedCache,
   storyCardsHtml,
-} from './feeds.js';
+} from '../netlify/functions/feeds.js';
 
 const RSS_FIXTURE = `<?xml version="1.0"?>
 <rss version="2.0">
@@ -146,8 +146,8 @@ test('story html and json-ld escape headline text', () => {
 });
 
 test('pages call the same-origin feed function and keep the live ad units', () => {
-  const home = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
-  const legacy = readFileSync(new URL('../../index3.html', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const legacy = readFileSync(new URL('../index3.html', import.meta.url), 'utf8');
   for (const html of [home, legacy]) {
     assert.equal(html.includes('api.rss2json.com'), false);
     assert.equal(html.includes('SUPABASE_ANON_KEY'), false);
