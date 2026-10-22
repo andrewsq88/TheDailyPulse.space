@@ -426,12 +426,7 @@
             }
         });
 
-        // --- 1. CONFIGURATION ---
-        const feeds = {
-            tech: ['https://feeds.feedburner.com/TechCrunch/', 'https://www.theverge.com/rss/index.xml'],
-            finance: ['https://cointelegraph.com/rss', 'https://finance.yahoo.com/news/rssindex'],
-            world: ['https://feeds.bbci.co.uk/news/world/rss.xml', 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml']
-        };
+        const FEEDS_ENDPOINT = '/.netlify/functions/feeds';
 
         const categories = [
             { id: 'all', label: 'All News' },
@@ -441,7 +436,6 @@
         ];
 
         let currentCategory = 'all';
-        const API_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
         // --- 2. INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -488,18 +482,13 @@
             
             feedContainer.innerHTML = `<div class="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-20 text-slate-400"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mb-4"></div><p class="text-slate-600 font-medium">Curating your feed...</p></div>`;
 
-            let urls = category === 'all' ? Object.values(feeds).flat() : feeds[category];
-
             try {
-                const promises = urls.map(url => fetch(API_BASE + encodeURIComponent(url)).then(res => res.json()));
-                const results = await Promise.all(promises);
-                
-                let allItems = results
-                    .filter(r => r.status === 'ok')
-                    .flatMap(r => r.items.map(item => ({...item, sourceName: r.feed.title })))
-                    .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+                const response = await fetch(FEEDS_ENDPOINT + '?category=' + encodeURIComponent(category));
+                if (!response.ok) throw new Error('Feed request failed');
+                const data = await response.json();
+                const allItems = Array.isArray(data.items) ? data.items : [];
 
-                statusLabel.innerText = "Updated: " + new Date().toLocaleTimeString();
+                statusLabel.innerText = "Updated: " + new Date(data.updatedAt || Date.now()).toLocaleTimeString();
                 renderCards(allItems);
 
             } catch (error) {
@@ -533,7 +522,7 @@
                             <a href="${item.link}" target="_blank">${item.title}</a>
                         </h3>
                         <p class="text-slate-600 text-sm line-clamp-3 mb-4 flex-grow">
-                            ${item.description.replace(/<[^>]*>?/gm, '').substring(0, 120)}...
+                            ${(item.description || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
                         </p>
                         <a href="${item.link}" target="_blank" class="inline-flex items-center text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors mt-auto">
                             Read Article 
