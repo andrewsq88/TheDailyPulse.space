@@ -119,6 +119,27 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(findStory([story()], storyId(story().link)).title, story().title);
   });
 
+  test('story pages show a credited excerpt and not the article body', () => {
+    const full = 'FULL ARTICLE BODY '.repeat(40);
+    const html = renderStoryHtml(story({
+      description: 'Word '.repeat(80),
+      content: full,
+      'content:encoded': full,
+      body: full,
+    }));
+    const excerpt = html.match(/<p class="excerpt">([^<]*)<\/p>/)[1];
+    assert.equal(excerpt.length <= 300, true);
+    assert.equal(excerpt.endsWith('…'), true);
+    assert.equal(html.includes('FULL ARTICLE BODY'), false);
+    assert.equal(html.includes('Originally published by Example &amp; Co.'), true);
+    assert.equal(html.includes('Read the original article'), true);
+    assert.equal(html.includes('href="https://example.com/rally"'), true);
+    assert.equal(html.includes('<h1>Markets rally &amp; hold</h1>'), true);
+    const data = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    assert.equal(data.description.length <= 300, true);
+    assert.equal(data.description.includes('FULL ARTICLE BODY'), false);
+  });
+
   test('privacy lastmod matches the date printed on the policy', () => {
     const html = readFileSync(new URL('../privacy.html', import.meta.url), 'utf8');
     assert.equal(html.includes('Last updated: November 2025'), true);

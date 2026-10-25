@@ -7,6 +7,7 @@ import {
   getStories,
   handler,
   itemListJsonLd,
+  excerptText,
   parseFeedXml,
   plainText,
   resetFeedCache,
@@ -60,6 +61,36 @@ test('parser reads RSS and Atom items and drops unsafe links', () => {
   assert.equal(atom[0].link, 'https://www.theverge.com/story');
   assert.equal(atom[0].description, 'A short summary.');
   assert.equal(atom[0].thumbnail, 'https://cdn.example.com/pic.jpg?quality=90&strip=all');
+});
+
+test('excerpts use description or summary and ignore the article body', () => {
+  const full = 'Full article body. '.repeat(40);
+  const xml = `<?xml version="1.0"?>
+  <rss><channel><title>Pub</title>
+    <item>
+      <title>Has a blurb</title>
+      <link>https://example.com/blurb</link>
+      <description>Visible excerpt.</description>
+      <content:encoded><![CDATA[<p>${full}</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Encoded only</title>
+      <link>https://example.com/encoded-only</link>
+      <content:encoded><![CDATA[<p>${full}</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Long blurb</title>
+      <link>https://example.com/long</link>
+      <description>${'Word '.repeat(80)}</description>
+    </item>
+  </channel></rss>`;
+  const stories = parseFeedXml(xml, { category: 'world', fallbackName: 'Pub' });
+  assert.equal(stories[0].description, 'Visible excerpt.');
+  assert.equal(stories[0].description.includes('Full article body'), false);
+  assert.equal(stories[1].description, '');
+  assert.equal(stories[2].description.length <= 300, true);
+  assert.equal(stories[2].description.endsWith('…'), true);
+  assert.equal(excerptText('Short'), 'Short');
 });
 
 test('plain text and urls reject active content', () => {

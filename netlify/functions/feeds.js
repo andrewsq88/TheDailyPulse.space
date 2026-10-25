@@ -9,6 +9,7 @@ const CACHE_TTL_MS = 12 * 60 * 1000;
 const CDN_MAX_AGE_SECONDS = 900;
 const BROWSER_MAX_AGE_SECONDS = 600;
 const PER_FEED_LIMIT = 15;
+export const EXCERPT_MAX = 300;
 const REQUEST_TIMEOUT_MS = 12000;
 const USER_AGENT = 'TheDailyPulse/1.0 (+https://www.thedailypulse.space)';
 
@@ -118,6 +119,16 @@ function itemImage(block) {
   return '';
 }
 
+export function excerptText(value) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= EXCERPT_MAX) return text;
+  let cut = text.slice(0, EXCERPT_MAX - 1).trimEnd();
+  const space = cut.lastIndexOf(' ');
+  if (space >= 240) cut = cut.slice(0, space).trimEnd();
+  cut = cut.replace(/[.,;:!?]+$/, '');
+  return `${cut}…`;
+}
+
 function blocksOf(xml, tagName) {
   const matches = xml.match(new RegExp(`<${tagName}\\b[\\s\\S]*?</${tagName}>`, 'gi')) || [];
   return matches;
@@ -136,9 +147,8 @@ export function parseFeedXml(xml, meta) {
     if (!title || !link) continue;
     const published = tagText(block, 'pubDate') || tagText(block, 'published') || tagText(block, 'updated');
     const timestamp = Date.parse(plainText(published));
-    const description = plainText(
-      tagText(block, 'description') || tagText(block, 'summary') || tagText(block, 'content'),
-    ).slice(0, 500);
+    // RSS description or Atom summary only. Never content or content:encoded.
+    const description = excerptText(plainText(tagText(block, 'description') || tagText(block, 'summary')));
     stories.push({
       title,
       link,

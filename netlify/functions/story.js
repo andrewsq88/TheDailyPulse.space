@@ -1,4 +1,4 @@
-import { getStories } from './feeds.js';
+import { excerptText, getStories } from './feeds.js';
 import {
   SITE_ORIGIN,
   PUBLICATION_NAME,
@@ -26,7 +26,7 @@ function safeHttps(value) {
 export function renderStoryHtml(story) {
   const title = String(story.title || '');
   const source = String(story.sourceName || 'News');
-  const description = String(story.description || '').trim();
+  const excerpt = excerptText(story?.description);
   const pageUrl = storyUrl(story.link);
   const published = formatLastmod(story.pubDate);
   const dateLabel = published
@@ -60,7 +60,7 @@ export function renderStoryHtml(story) {
     },
   };
   if (published) structured.datePublished = published;
-  if (description) structured.description = description;
+  if (excerpt) structured.description = excerpt;
   if (outbound) structured.isBasedOn = outbound;
 
   return `<!DOCTYPE html>
@@ -69,11 +69,11 @@ export function renderStoryHtml(story) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)} | ${escapeHtml(PUBLICATION_NAME)}</title>
-  <meta name="description" content="${escapeHtml(description.slice(0, 300))}">
+  <meta name="description" content="${escapeHtml(excerpt)}">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${escapeHtml(pageUrl)}">
   <meta property="og:title" content="${escapeHtml(title)}">
-  <meta property="og:description" content="${escapeHtml(description.slice(0, 300))}">
+  <meta property="og:description" content="${escapeHtml(excerpt)}">
   <meta property="og:url" content="${escapeHtml(pageUrl)}">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="${escapeHtml(PUBLICATION_NAME)}">
@@ -102,9 +102,8 @@ export function renderStoryHtml(story) {
     <article>
       <h1>${escapeHtml(title)}</h1>
       <p class="byline">${dateLabel ? `<time datetime="${escapeHtml(published)}">${escapeHtml(dateLabel)}</time> · ` : ''}${escapeHtml(source)}</p>
-      ${description ? `<p>${escapeHtml(description)}</p>` : ''}
-      ${outbound ? `<p><a class="read" href="${escapeHtml(outbound)}" rel="noopener noreferrer">Read the original at ${escapeHtml(source)}</a></p>` : ''}
-      <p class="note">Summary aggregated by ${escapeHtml(PUBLICATION_NAME)}.</p>
+      ${excerpt ? `<p class="excerpt">${escapeHtml(excerpt)}</p>` : ''}
+      ${outbound ? `<p>Originally published by ${escapeHtml(source)}. <a class="read" href="${escapeHtml(outbound)}" rel="noopener noreferrer">Read the original article</a>.</p>` : ''}
     </article>
   </main>
 </body>
