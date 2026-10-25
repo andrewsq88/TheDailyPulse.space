@@ -8,3 +8,26 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# Rewrites so dynamic files win over a stale checked-in sitemap.
+# Existing files such as ads.txt and robots.txt are served first.
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
+  status = 200
+
+[[redirects]]
+  from = "/news-sitemap.xml"
+  to = "/.netlify/functions/news-sitemap"
+  status = 200
+
+[[redirects]]
+  from = "/stories/*"
+  to = "/.netlify/functions/story?id=:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.txt"
+  to = "/.netlify/functions/indexnow-key?file=:splat"
+  status = 200
+  force = false

@@ -3,6 +3,7 @@
  * never chooses what the server fetches. Responses are cached for 12 minutes
  * in a warm instance and for 15 minutes on Netlify's CDN.
  */
+import { noteFreshStories, resetSearchIndexState } from '../../lib/search-index.js';
 
 const CACHE_TTL_MS = 12 * 60 * 1000;
 const CDN_MAX_AGE_SECONDS = 900;
@@ -34,6 +35,7 @@ let cache = { expiresAt: 0, stories: null, updatedAt: null, warnings: [] };
 
 export function resetFeedCache() {
   cache = { expiresAt: 0, stories: null, updatedAt: null, warnings: [] };
+  resetSearchIndexState();
 }
 
 export function decodeEntities(value) {
@@ -329,6 +331,13 @@ export async function handler(event) {
   }
 
   const result = await getStories();
+  if (result.cache === 'fresh' && result.stories.length) {
+    try {
+      await noteFreshStories(result.stories);
+    } catch {
+      // IndexNow must not affect the feed response.
+    }
+  }
   const items = selectStories(result.stories, category);
   if (!items.length && result.cache === 'empty') {
     return jsonResponse(502, { status: 'error', error: 'Unable to load feeds' });
