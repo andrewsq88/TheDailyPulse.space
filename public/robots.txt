@@ -19,4 +19,5 @@ User-agent: AdsBot-Google
 Allow: /
 
 Sitemap: https://thedailypulse.space/sitemap.xml
+Sitemap: https://thedailypulse.space/news-sitemap.xml
 Host: thedailypulse.space

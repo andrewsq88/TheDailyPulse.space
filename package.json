@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
+    "indexnow:key": "node scripts/generate-indexnow-key.js",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
