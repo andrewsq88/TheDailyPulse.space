@@ -146,14 +146,14 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(PRIVACY_LASTMOD, '2025-11-01');
   });
 
-  test('homepage copy and canonical host are the apex, and the popunder stays', () => {
+  test('homepage copy and canonical host are the apex, and the popunder is gone', () => {
     const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     const robots = readFileSync(new URL('../public/robots.txt', import.meta.url), 'utf8');
     assert.equal(home.includes('<title>The Daily Pulse: Today\'s Top News Stories in One Page</title>'), true);
     assert.equal(home.includes('content="The day\'s top stories from business, tech, markets and the world, gathered on one page. Catch up in minutes."'), true);
     assert.equal(home.includes('<link rel="canonical" href="https://thedailypulse.space/">'), true);
     assert.equal(home.includes('https://www.thedailypulse.space'), false);
-    assert.equal(home.includes('https://pl28802746.profitablecpmratenetwork.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), true);
+    assert.equal(home.includes('https://pl28802746.profitablecpmratenetwork.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), false);
     assert.equal(home.includes("loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);"), true);
     assert.equal(robots.includes('Sitemap: https://thedailypulse.space/sitemap.xml'), true);
     assert.equal(robots.includes('Sitemap: https://thedailypulse.space/news-sitemap.xml'), true);
