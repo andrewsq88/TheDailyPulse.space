@@ -31,3 +31,6 @@
   to = "/.netlify/functions/indexnow-key?file=:splat"
   status = 200
   force = false
+
+# Edge functions in netlify/edge-functions (default dir) keep the homepage
+# headlines current between deploys; fresh-headlines declares its own paths.
