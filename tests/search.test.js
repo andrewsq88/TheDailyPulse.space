@@ -115,7 +115,14 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(html.includes('highperformanceformat'), false);
     assert.equal(html.includes('adsterra'), false);
     const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
-    assert.equal(JSON.parse(json).headline, 'A </script> story');
+    const data = JSON.parse(json);
+    assert.equal(data['@type'], 'NewsArticle');
+    assert.equal(data.headline, 'A </script> story');
+    assert.equal(data.datePublished, '2026-10-25T11:00:00Z');
+    assert.equal(data.dateModified, '2026-10-25T11:00:00Z');
+    assert.equal(data.publisher['@type'], 'NewsMediaOrganization');
+    assert.equal(data.publisher.name, 'The Daily Pulse');
+    assert.equal(data.publisher.url, 'https://thedailypulse.space/');
     assert.equal(findStory([story()], storyId(story().link)).title, story().title);
   });
 
@@ -155,10 +162,25 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(home.includes('https://www.thedailypulse.space'), false);
     assert.equal(home.includes('https://pl28802746.profitablecpmratenetwork.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), false);
     assert.equal(home.includes("loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);"), true);
+    assert.equal(home.includes("loadAdsterraInIframe('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);"), true);
+    assert.equal(home.includes('https://www.highperformanceformat.com/'), true);
+    assert.equal(home.includes('name="google-site-verification" content="2N901cMjWSixwZhx50m3ddt9PTHsdCrLeDFb_9-6raQ"'), true);
+    assert.equal((home.match(/<html/gi) || []).length, 1);
+    assert.equal((home.match(/<\/html>/gi) || []).length, 1);
     assert.equal(robots.includes('Sitemap: https://thedailypulse.space/sitemap.xml'), true);
     assert.equal(robots.includes('Sitemap: https://thedailypulse.space/news-sitemap.xml'), true);
     assert.equal(robots.includes('Disallow: /api/'), true);
     assert.equal(robots.includes('Disallow: /admin/'), true);
+    assert.equal(robots.includes('Host:'), false);
+    for (const bot of ['Googlebot', 'Bingbot', 'GPTBot', 'ClaudeBot', 'AdsBot-Google', 'OAI-SearchBot', 'PerplexityBot', 'Google-Extended']) {
+      assert.equal(new RegExp(`User-agent: ${bot}\\r?\\nAllow: /`).test(robots), true, bot);
+    }
+    const llms = readFileSync(new URL('../public/llms.txt', import.meta.url), 'utf8');
+    assert.equal(llms.includes('daily one-page news digest'), true);
+    assert.equal(llms.includes('https://thedailypulse.space/'), true);
+    assert.equal(llms.includes('https://thedailypulse.space/privacy.html'), true);
+    assert.equal(llms.includes('https://thedailypulse.space/sitemap.xml'), true);
+    assert.equal(llms.includes('https://thedailypulse.space/news-sitemap.xml'), true);
     assert.equal(existsSync(new URL('../public/sitemap.xml', import.meta.url)), false);
   });
 

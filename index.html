@@ -628,10 +628,11 @@
             function loadAdsterraInIframe(iframeId, adKey, width, height) {
                 var iframe = document.getElementById(iframeId);
                 if (!iframe) return;
-                var html = '<!DOCTYPE html><html><head><style>*{margin:0;padding:0;overflow:hidden;}</style></head><body>'
+                // Split the root tag so this page source has a single html element. The iframe document is unchanged.
+                var html = '<!DOCTYPE html><' + 'html><head><style>*{margin:0;padding:0;overflow:hidden;}</style></head><body>'
                     + '<script>atOptions={"key":"' + adKey + '","format":"iframe","height":' + height + ',"width":' + width + ',"params":{}};' + '<\/script>'
                     + '<script src="https://www.highperformanceformat.com/' + adKey + '/invoke.js"><\/script>'
-                    + '</body></html>';
+                    + '</body></' + 'html>';
                 iframe.srcdoc = html;
             }
 

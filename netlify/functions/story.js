@@ -59,7 +59,10 @@ export function renderStoryHtml(story) {
       name: source,
     },
   };
-  if (published) structured.datePublished = published;
+  if (published) {
+    structured.datePublished = published;
+    structured.dateModified = published;
+  }
   if (excerpt) structured.description = excerpt;
   if (outbound) structured.isBasedOn = outbound;
 

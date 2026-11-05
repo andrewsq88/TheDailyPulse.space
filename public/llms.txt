@@ -1,0 +1,22 @@
+# The Daily Pulse
+
+> A daily one-page news digest. The day's top stories from business, tech, markets, and the world, gathered on one page so readers can catch up in minutes.
+
+The Daily Pulse is a one-page news digest at https://thedailypulse.space/. It collects headlines from public RSS feeds and shows them together. Each card links to the original publisher. Story pages on this site are short excerpts with that source link, not full reprints.
+
+Technology, Finance, and Global are filters on that same home page.
+
+## Main sections
+
+- [Today's digest](https://thedailypulse.space/): The one-page digest, including Technology, Finance, and Global
+- [Technology](https://thedailypulse.space/): Technology headlines on the daily digest
+- [Finance](https://thedailypulse.space/): Markets and finance headlines on the daily digest
+- [Global](https://thedailypulse.space/): World news headlines on the daily digest
+- [Privacy policy](https://thedailypulse.space/privacy.html): How The Daily Pulse handles reader data
+
+Story permalinks use the form https://thedailypulse.space/stories/{id}. The current list is in the sitemaps below.
+
+## Sitemaps
+
+- [Sitemap](https://thedailypulse.space/sitemap.xml): Homepage, privacy policy, and a permalink for every story currently in the feed
+- [News sitemap](https://thedailypulse.space/news-sitemap.xml): Stories published in the last 48 hours
