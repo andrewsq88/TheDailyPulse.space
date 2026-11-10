@@ -423,7 +423,7 @@ describe('search indexing', { concurrency: 1 }, () => {
     const file = readFileSync(new URL(`../public/${key}.txt`, import.meta.url));
     assert.deepEqual(file, Buffer.from(key));
     const lushlands = 'https://www.lushlandsmanagement.com/?utm_source=dailypulse&utm_medium=crosslink&utm_campaign=footer-2026-11';
-    const meals = 'https://weeklymealplan.space/?utm_source=dailypulse&utm_medium=crosslink&utm_campaign=footer-2026-11';
+    const meals = 'https://www.weeklymealplan.space/?utm_source=dailypulse&utm_medium=crosslink&utm_campaign=footer-2026-11';
     const pages = [
       readFileSync(new URL('../index.html', import.meta.url), 'utf8'),
       readFileSync(new URL('../privacy.html', import.meta.url), 'utf8'),

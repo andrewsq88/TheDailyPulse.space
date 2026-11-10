@@ -42,7 +42,7 @@ function otherSitesFooter() {
     <h2 id="explore-other-sites">Explore our other sites</h2>
     <ul>
       <li><a href="https://www.lushlandsmanagement.com/?utm_source=dailypulse&amp;utm_medium=crosslink&amp;utm_campaign=footer-2026-11">LushLands Management</a></li>
-      <li><a href="https://weeklymealplan.space/?utm_source=dailypulse&amp;utm_medium=crosslink&amp;utm_campaign=footer-2026-11">Weekly Meal Planner</a></li>
+      <li><a href="https://www.weeklymealplan.space/?utm_source=dailypulse&amp;utm_medium=crosslink&amp;utm_campaign=footer-2026-11">Weekly Meal Planner</a></li>
     </ul>
   </nav>
 </footer>`;
