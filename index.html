@@ -21,10 +21,25 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "NewsMediaOrganization",
-      "name": "The Daily Pulse",
-      "url": "https://thedailypulse.space/",
-      "description": "The day's top stories from business, tech, markets and the world, gathered on one page. Catch up in minutes."
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://thedailypulse.space/#organization",
+          "name": "The Daily Pulse",
+          "url": "https://thedailypulse.space/",
+          "description": "The day's top stories from business, tech, markets and the world, gathered on one page. Catch up in minutes.",
+          "logo": "https://thedailypulse.space/dp-logo.jpg"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://thedailypulse.space/#website",
+          "name": "The Daily Pulse",
+          "url": "https://thedailypulse.space/",
+          "description": "The day's top stories from business, tech, markets and the world, gathered on one page. Catch up in minutes.",
+          "inLanguage": "en",
+          "publisher": { "@id": "https://thedailypulse.space/#organization" }
+        }
+      ]
     }
     </script>
     <!-- headline-jsonld:start -->

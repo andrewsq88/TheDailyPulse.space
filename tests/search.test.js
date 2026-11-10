@@ -9,7 +9,7 @@ import { FEEDS, resetFeedCache } from '../netlify/functions/feeds.js';
 import { handler as sitemapHandler } from '../netlify/functions/sitemap.js';
 import { handler as newsHandler } from '../netlify/functions/news-sitemap.js';
 import { handler as keyHandler } from '../netlify/functions/indexnow-key.js';
-import { handler as storyHandler, renderStoryHtml } from '../netlify/functions/story.js';
+import { handler as storyHandler, renderMissingStoryHtml, renderStoryHtml } from '../netlify/functions/story.js';
 import {
   HOMEPAGE_COPY_UPDATED,
   PRIVACY_LASTMOD,
@@ -22,6 +22,8 @@ import {
   renderNewsSitemap,
   renderSitemap,
   resetSearchIndexState,
+  siteStructuredData,
+  sitemapEntries,
   storyId,
   storyUrl,
   writeIndexNowKeyFile,
@@ -29,6 +31,23 @@ import {
 
 const NOW = Date.parse('2026-10-25T12:00:00Z');
 const FIXTURE_KEY = 'indexnowtestkey';
+
+function structuredNodes(html) {
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+  const nodes = [];
+  for (const block of blocks) {
+    const data = JSON.parse(block[1]);
+    if (Array.isArray(data['@graph'])) nodes.push(...data['@graph']);
+    else nodes.push(data);
+  }
+  return nodes;
+}
+
+function single(html, pattern) {
+  const found = [...html.matchAll(pattern)];
+  assert.equal(found.length, 1, String(pattern));
+  return found[0][1];
+}
 
 function story(overrides) {
   return {
@@ -114,15 +133,15 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(html.includes('profitablecpmratenetwork'), false);
     assert.equal(html.includes('highperformanceformat'), false);
     assert.equal(html.includes('adsterra'), false);
-    const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
-    const data = JSON.parse(json);
-    assert.equal(data['@type'], 'NewsArticle');
+    const nodes = structuredNodes(html);
+    const data = nodes.find((node) => node['@type'] === 'NewsArticle');
+    const org = nodes.find((node) => node['@type'] === 'Organization');
     assert.equal(data.headline, 'A </script> story');
     assert.equal(data.datePublished, '2026-10-25T11:00:00Z');
     assert.equal(data.dateModified, '2026-10-25T11:00:00Z');
-    assert.equal(data.publisher['@type'], 'NewsMediaOrganization');
-    assert.equal(data.publisher.name, 'The Daily Pulse');
-    assert.equal(data.publisher.url, 'https://thedailypulse.space/');
+    assert.equal(data.publisher['@id'], 'https://thedailypulse.space/#organization');
+    assert.equal(org.name, 'The Daily Pulse');
+    assert.equal(org.url, 'https://thedailypulse.space/');
     assert.equal(findStory([story()], storyId(story().link)).title, story().title);
   });
 
@@ -142,7 +161,7 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(html.includes('Read the original article'), true);
     assert.equal(html.includes('href="https://example.com/rally"'), true);
     assert.equal(html.includes('<h1>Markets rally &amp; hold</h1>'), true);
-    const data = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    const data = structuredNodes(html).find((node) => node['@type'] === 'NewsArticle');
     assert.equal(data.description.length <= 300, true);
     assert.equal(data.description.includes('FULL ARTICLE BODY'), false);
   });
@@ -333,6 +352,70 @@ describe('search indexing', { concurrency: 1 }, () => {
       resetFeedCache();
       resetSearchIndexState();
     }
+  });
+
+  test('structured data parses and each public page has one matching canonical', () => {
+    const expected = siteStructuredData();
+    const org = expected['@graph'].find((node) => node['@type'] === 'Organization');
+    const site = expected['@graph'].find((node) => node['@type'] === 'WebSite');
+    assert.equal(org['@type'], 'Organization');
+    assert.equal(org.name, 'The Daily Pulse');
+    assert.equal(org.url, 'https://thedailypulse.space/');
+    assert.equal(org.logo, 'https://thedailypulse.space/dp-logo.jpg');
+    assert.equal(existsSync(new URL('../public/dp-logo.jpg', import.meta.url)), true);
+    assert.equal(site['@type'], 'WebSite');
+    assert.equal(site.name, 'The Daily Pulse');
+    assert.equal(site.url, 'https://thedailypulse.space/');
+    assert.equal(site.publisher['@id'], org['@id']);
+    assert.equal(JSON.stringify(expected).includes('sameAs'), false);
+    assert.equal(JSON.stringify(expected).includes('email'), false);
+    assert.equal(JSON.stringify(expected).includes('telephone'), false);
+
+    const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    const privacy = readFileSync(new URL('../privacy.html', import.meta.url), 'utf8');
+    const article = renderStoryHtml(story());
+    const missing = renderMissingStoryHtml('https://thedailypulse.space/stories/aaaaaaaaaaaaaaaaaaaa');
+    const pages = [
+      ['home', home, 'https://thedailypulse.space/', 'The Daily Pulse: Today\'s Top News Stories in One Page'],
+      ['privacy', privacy, 'https://thedailypulse.space/privacy.html', 'Privacy Policy | The Daily Pulse'],
+      ['story', article, storyUrl(story().link), 'Markets rally &amp; hold | The Daily Pulse'],
+      ['missing', missing, 'https://thedailypulse.space/stories/aaaaaaaaaaaaaaaaaaaa', 'Story not found | The Daily Pulse'],
+    ];
+    const descriptions = [];
+    for (const [name, html, canonical, title] of pages) {
+      const nodes = structuredNodes(html);
+      const foundOrg = nodes.find((node) => node['@type'] === 'Organization');
+      const foundSite = nodes.find((node) => node['@type'] === 'WebSite');
+      assert.deepEqual(foundOrg, org, name);
+      assert.deepEqual(foundSite, site, name);
+      assert.equal(single(html, /<title>([^<]*)<\/title>/g), title, name);
+      const description = single(html, /<meta name="description" content="([^"]*)"/g);
+      assert.equal(description.length > 0, true, name);
+      descriptions.push(description);
+      assert.equal(single(html, /<link rel="canonical" href="([^"]*)"/g), canonical, name);
+      assert.equal(canonical.startsWith('https://thedailypulse.space/'), true, name);
+      assert.equal(canonical.includes('www.'), false, name);
+      assert.equal(single(html, /<meta property="og:title" content="([^"]*)"/g), title, name);
+      assert.equal(single(html, /<meta property="og:description" content="([^"]*)"/g), description, name);
+      assert.equal(single(html, /<meta property="og:url" content="([^"]*)"/g), canonical, name);
+      assert.equal((html.match(/rel="canonical"/g) || []).length, 1, name);
+    }
+    assert.equal(new Set(descriptions).size, descriptions.length);
+    assert.deepEqual(sitemapEntries([]).map((entry) => entry.loc), [
+      'https://thedailypulse.space/',
+      'https://thedailypulse.space/privacy.html',
+    ]);
+
+    const bare = renderStoryHtml(story({ description: '', content: '', 'content:encoded': '' }));
+    const bareArticle = structuredNodes(bare).find((node) => node['@type'] === 'NewsArticle');
+    assert.equal(bareArticle.headline, 'Markets rally & hold');
+    assert.equal(bareArticle.author.name, 'Example & Co');
+    assert.equal(bareArticle.description, undefined);
+    assert.equal(single(bare, /<meta name="description" content="([^"]*)"/g), 'Markets rally &amp; hold — Example &amp; Co');
+    const homeTwitterTitle = single(home, /<meta name="twitter:title" content="([^"]*)"/g);
+    const homeTwitterDescription = single(home, /<meta name="twitter:description" content="([^"]*)"/g);
+    assert.equal(homeTwitterTitle, 'The Daily Pulse: Today\'s Top News Stories in One Page');
+    assert.equal(homeTwitterDescription, single(home, /<meta name="description" content="([^"]*)"/g));
   });
 
   test('public pages link the other sites and the IndexNow file is exact bytes', () => {

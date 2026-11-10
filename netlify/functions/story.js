@@ -2,9 +2,12 @@ import { excerptText, getStories } from './feeds.js';
 import {
   SITE_ORIGIN,
   PUBLICATION_NAME,
+  ORGANIZATION_ID,
+  WEBSITE_ID,
   escapeHtml,
   findStory,
   formatLastmod,
+  siteStructuredData,
   storyIdFromEvent,
   storyUrl,
 } from '../../lib/search-index.js';
@@ -64,41 +67,41 @@ export function renderStoryHtml(story) {
     : '';
   const image = safeHttps(story.thumbnail) || `${SITE_ORIGIN}/dp-logo.jpg`;
   const outbound = /^https?:\/\//.test(String(story.link)) ? String(story.link) : '';
-  const structured = {
-    '@context': 'https://schema.org',
+  const pageTitle = `${title} | ${PUBLICATION_NAME}`;
+  const metaDescription = excerpt || `${title} — ${source}`;
+  const structured = siteStructuredData();
+  const article = {
     '@type': 'NewsArticle',
     headline: title,
     inLanguage: 'en',
     url: pageUrl,
     mainEntityOfPage: pageUrl,
-    publisher: {
-      '@type': 'NewsMediaOrganization',
-      name: PUBLICATION_NAME,
-      url: `${SITE_ORIGIN}/`,
-    },
+    isPartOf: { '@id': WEBSITE_ID },
+    publisher: { '@id': ORGANIZATION_ID },
     author: {
       '@type': 'Organization',
       name: source,
     },
   };
   if (published) {
-    structured.datePublished = published;
-    structured.dateModified = published;
+    article.datePublished = published;
+    article.dateModified = published;
   }
-  if (excerpt) structured.description = excerpt;
-  if (outbound) structured.isBasedOn = outbound;
+  if (excerpt) article.description = excerpt;
+  if (outbound) article.isBasedOn = outbound;
+  structured['@graph'].push(article);
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)} | ${escapeHtml(PUBLICATION_NAME)}</title>
-  <meta name="description" content="${escapeHtml(excerpt)}">
+  <title>${escapeHtml(pageTitle)}</title>
+  <meta name="description" content="${escapeHtml(metaDescription)}">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${escapeHtml(pageUrl)}">
-  <meta property="og:title" content="${escapeHtml(title)}">
-  <meta property="og:description" content="${escapeHtml(excerpt)}">
+  <meta property="og:title" content="${escapeHtml(pageTitle)}">
+  <meta property="og:description" content="${escapeHtml(metaDescription)}">
   <meta property="og:url" content="${escapeHtml(pageUrl)}">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="${escapeHtml(PUBLICATION_NAME)}">
@@ -138,14 +141,30 @@ export function renderStoryHtml(story) {
 </html>`;
 }
 
-export function renderMissingStoryHtml() {
+export function renderMissingStoryHtml(pageUrl = '') {
+  const title = `Story not found | ${PUBLICATION_NAME}`;
+  const description = 'This story is no longer in today\'s feed.';
+  const canonical = pageUrl
+    ? `<link rel="canonical" href="${escapeHtml(pageUrl)}">`
+    : '';
+  const ogUrl = pageUrl
+    ? `<meta property="og:url" content="${escapeHtml(pageUrl)}">`
+    : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Story not found | ${escapeHtml(PUBLICATION_NAME)}</title>
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}">
   <meta name="robots" content="noindex">
+  ${canonical}
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  ${ogUrl}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="${escapeHtml(PUBLICATION_NAME)}">
+  <script type="application/ld+json">${jsonLd(siteStructuredData())}</script>
   <style>
     body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; font-family: Inter, sans-serif; background: #f8fafc; color: #1e293b; }
     main { flex: 1 0 auto; width: 100%; max-width: 42rem; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
@@ -178,13 +197,14 @@ function htmlResponse(statusCode, body, cacheable) {
 
 export async function handler(event) {
   const id = storyIdFromEvent(event);
-  if (!id) return htmlResponse(404, renderMissingStoryHtml(), false);
+  const missingUrl = id ? `${SITE_ORIGIN}/stories/${id}` : '';
+  if (!id) return htmlResponse(404, renderMissingStoryHtml(missingUrl), false);
   try {
     const result = await getStories();
     const story = findStory(result.stories, id);
-    if (!story) return htmlResponse(404, renderMissingStoryHtml(), false);
+    if (!story) return htmlResponse(404, renderMissingStoryHtml(missingUrl), false);
     return htmlResponse(200, renderStoryHtml(story), true);
   } catch {
-    return htmlResponse(404, renderMissingStoryHtml(), false);
+    return htmlResponse(404, renderMissingStoryHtml(missingUrl), false);
   }
 }
