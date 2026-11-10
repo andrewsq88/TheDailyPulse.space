@@ -334,4 +334,34 @@ describe('search indexing', { concurrency: 1 }, () => {
       resetSearchIndexState();
     }
   });
+
+  test('public pages link the other sites and the IndexNow file is exact bytes', () => {
+    const key = 'aa07e5ec709905f895fcccc55555a4c9';
+    const file = readFileSync(new URL(`../public/${key}.txt`, import.meta.url));
+    assert.deepEqual(file, Buffer.from(key));
+    const lushlands = 'https://www.lushlandsmanagement.com/?utm_source=dailypulse&utm_medium=crosslink&utm_campaign=footer-2026-11';
+    const meals = 'https://weeklymealplan.space/?utm_source=dailypulse&utm_medium=crosslink&utm_campaign=footer-2026-11';
+    const pages = [
+      readFileSync(new URL('../index.html', import.meta.url), 'utf8'),
+      readFileSync(new URL('../privacy.html', import.meta.url), 'utf8'),
+      renderStoryHtml(story()),
+    ];
+    for (const html of pages) {
+      const start = html.toLowerCase().lastIndexOf('<footer');
+      const end = html.toLowerCase().indexOf('</footer>', start);
+      const footer = html.slice(start, end + '</footer>'.length);
+      assert.equal(footer.includes('Explore our other sites'), true);
+      assert.equal(footer.includes('LushLands Management'), true);
+      assert.equal(footer.includes('Weekly Meal Planner'), true);
+      assert.equal(footer.includes(lushlands.replace(/&/g, '&amp;')), true);
+      assert.equal(footer.includes(meals.replace(/&/g, '&amp;')), true);
+      assert.equal(/andrew/i.test(footer), false);
+      assert.equal(/registerprep/i.test(footer), false);
+      assert.equal(footer.includes('<iframe'), false);
+      assert.equal(footer.includes('<script'), false);
+    }
+    const rules = readFileSync(new URL('../netlify.toml', import.meta.url), 'utf8');
+    assert.equal(rules.includes('from = "/*.txt"'), true);
+    assert.match(rules, /from = "\/\*\.txt"[\s\S]*?force = false/);
+  });
 });
