@@ -16,6 +16,8 @@ function replaceMarked(html, name, contents) {
 }
 
 await copyFile(new URL('../privacy.html', import.meta.url), new URL('../dist/privacy.html', import.meta.url));
+await copyFile(new URL('../terms.html', import.meta.url), new URL('../dist/terms.html', import.meta.url));
+await copyFile(new URL('../cookies.html', import.meta.url), new URL('../dist/cookies.html', import.meta.url));
 
 const indexPath = new URL('../dist/index.html', import.meta.url);
 let html = await readFile(indexPath, 'utf8');
@@ -33,6 +35,10 @@ try {
       'headline-jsonld',
       `<script type="application/ld+json">${itemListJsonLd(top)}</script>`,
     );
+    if (top[0].thumbnail) {
+      const preload = `<link rel="preload" as="image" href="${String(top[0].thumbnail).replace(/"/g, '&quot;')}">`;
+      html = replaceMarked(html, 'lcp-preload', preload);
+    }
     console.log(`Injected ${top.length} headlines into dist/index.html`);
   } else {
     console.warn('Headline injection skipped: no stories returned');

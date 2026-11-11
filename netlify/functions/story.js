@@ -34,6 +34,7 @@ const OTHER_SITES_FOOTER_CSS = `
     .site-footer a { display: inline-block; padding: 0.5rem 0; color: #cbd5e1; font-size: 0.875rem; font-weight: 600; text-decoration: none; }
     .site-footer a:hover, .site-footer a:focus-visible { color: #fb7185; }
     .site-footer a:focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
+    .site-footer .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 `;
 
 function otherSitesFooter() {
@@ -43,6 +44,14 @@ function otherSitesFooter() {
     <ul>
       <li><a href="https://www.lushlandsmanagement.com/?utm_source=dailypulse&amp;utm_medium=crosslink&amp;utm_campaign=footer-2026-11">LushLands Management</a></li>
       <li><a href="https://www.weeklymealplan.space/?utm_source=dailypulse&amp;utm_medium=crosslink&amp;utm_campaign=footer-2026-11">Weekly Meal Planner</a></li>
+    </ul>
+  </nav>
+  <nav aria-labelledby="legal-pages">
+    <h2 id="legal-pages" class="sr-only">Legal</h2>
+    <ul>
+      <li><a href="/privacy.html">Privacy Policy</a></li>
+      <li><a href="/terms.html">Terms of Service</a></li>
+      <li><a href="/cookies.html">Cookie Policy</a></li>
     </ul>
   </nav>
 </footer>`;

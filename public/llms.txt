@@ -13,6 +13,8 @@ Technology, Finance, and Global are filters on that same home page.
 - [Finance](https://thedailypulse.space/): Markets and finance headlines on the daily digest
 - [Global](https://thedailypulse.space/): World news headlines on the daily digest
 - [Privacy policy](https://thedailypulse.space/privacy.html): How The Daily Pulse handles reader data
+- [Terms of service](https://thedailypulse.space/terms.html): Terms for using The Daily Pulse
+- [Cookie policy](https://thedailypulse.space/cookies.html): Cookies and the advertising-cookie choice
 
 Story permalinks use the form https://thedailypulse.space/stories/{id}. The current list is in the sitemaps below.
 

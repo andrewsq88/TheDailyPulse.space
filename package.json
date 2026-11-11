@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/publish-extras.js",
+    "css": "tailwindcss -i src/site.css -o public/site.css --minify",
+    "build": "npm run css && vite build && node scripts/publish-extras.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",

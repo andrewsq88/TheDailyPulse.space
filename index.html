@@ -45,58 +45,16 @@
     <!-- headline-jsonld:start -->
     <!-- headline-jsonld:end -->
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/favicon-32.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" as="image" href="/dp-logo.jpg">
+    <!-- lcp-preload:start -->
+    <!-- lcp-preload:end -->
+    <link rel="stylesheet" href="/site.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#fef3f2',
-                            100: '#fee4e2',
-                            200: '#fecdd3',
-                            400: '#fb7185',
-                            500: '#f43f5e',
-                            600: '#e11d48',
-                            700: '#be123c',
-                            800: '#9f1239',
-                            900: '#881337',
-                        },
-                        accent: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            400: '#34d399',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .line-clamp-3 {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-    </style>
+    <script src="/consent.js" defer></script>
+    <script src="/cookieless-analytics.js" defer></script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen">
 
@@ -104,7 +62,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center gap-2">
-                    <img src="/dp-logo.jpg" alt="The Daily Pulse Logo" class="w-10 h-10 object-contain">
+                    <img src="/dp-logo.jpg" width="40" height="40" alt="The Daily Pulse Logo" class="w-10 h-10 object-contain" fetchpriority="high">
                     <div>
                         <h1 class="text-xl font-bold tracking-tight text-slate-900 leading-none">The Daily Pulse</h1>
                         <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Live Aggregator</p>
@@ -229,12 +187,13 @@
                     </li>
                 </ul>
             </nav>
-            <div class="flex justify-center gap-6 mb-8 text-sm font-semibold text-slate-300">
-                <a href="privacy.html" class="hover:text-brand-400 transition-colors">Privacy Policy</a>
-                <a href="#" class="hover:text-brand-400 transition-colors">Terms of Service</a>
+            <div class="flex flex-wrap justify-center gap-6 mb-8 text-sm font-semibold text-slate-300">
+                <a href="/privacy.html" class="hover:text-brand-400 transition-colors">Privacy Policy</a>
+                <a href="/terms.html" class="hover:text-brand-400 transition-colors">Terms of Service</a>
+                <a href="/cookies.html" class="hover:text-brand-400 transition-colors">Cookie Policy</a>
                 <button onclick="openAdvertiseModal()" class="hover:text-brand-400 transition-colors">Advertise</button>
             </div>
-            <p class="text-xs text-slate-600">&copy; 2025 The Daily Pulse. Content aggregated from RSS feeds.</p>
+            <p class="text-xs text-slate-600">&copy; 2026 The Daily Pulse. Content aggregated from RSS feeds.</p>
         </div>
     </footer>
 
@@ -609,20 +568,20 @@
                 return;
             }
 
-            items.forEach((item) => {
+            items.forEach((item, index) => {
                 const sourceName = plainText(item.sourceName || 'News');
                 const title = plainText(item.title || '');
                 const link = safeHttpUrl(item.link) || '#';
                 const description = plainText(item.description).substring(0, 120);
                 const parsedDate = new Date(item.pubDate);
                 const dateStr = Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                const imgUrl = safeHttpUrl(item.thumbnail) || `https://via.placeholder.com/600x300/e2e8f0/94a3b8?text=${encodeURIComponent(sourceName)}`;
+                const imgUrl = safeHttpUrl(item.thumbnail) || '/news-placeholder.svg';
 
                 const card = document.createElement('article');
                 card.className = "bg-white rounded-xl shadow-sm hover:shadow-xl hover:shadow-brand-100/50 transition-all duration-300 overflow-hidden border border-slate-100 hover:border-brand-200 flex flex-col group";
                 card.innerHTML = `
                     <div class="relative overflow-hidden h-48 bg-slate-200">
-                        <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(title)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/600x300/e2e8f0/94a3b8?text=News'">
+                        <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(title)}" width="600" height="192" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ''} onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/news-placeholder.svg';}">
                         <div class="absolute top-2 left-2 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded shadow text-slate-700 uppercase tracking-wide">
                             ${escapeHtml(sourceName)}
                         </div>
@@ -662,8 +621,13 @@
                 iframe.srcdoc = html;
             }
 
-            loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);
-            loadAdsterraInIframe('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);
+            function loadAdsIfConsented() {
+                if (!window.DailyPulseConsent || !window.DailyPulseConsent.accepted()) return;
+                loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);
+                loadAdsterraInIframe('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);
+            }
+            loadAdsIfConsented();
+            window.addEventListener('dailypulse-ad-consent', loadAdsIfConsented);
         })();
     </script>
 </body>
