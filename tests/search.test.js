@@ -168,8 +168,8 @@ describe('search indexing', { concurrency: 1 }, () => {
 
   test('privacy lastmod matches the date printed on the policy', () => {
     const html = readFileSync(new URL('../privacy.html', import.meta.url), 'utf8');
-    assert.equal(html.includes('Last updated: November 2025'), true);
-    assert.equal(PRIVACY_LASTMOD, '2025-11-01');
+    assert.equal(html.includes('Last updated: November 2026'), true);
+    assert.equal(PRIVACY_LASTMOD, '2026-11-11');
   });
 
   test('homepage copy and canonical host are the apex, and the popunder is gone', () => {
@@ -178,6 +178,9 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(home.includes('<title>The Daily Pulse: Today\'s Top News Stories in One Page</title>'), true);
     assert.equal(home.includes('content="The day\'s top stories from business, tech, markets and the world, gathered on one page. Catch up in minutes."'), true);
     assert.equal(home.includes('<link rel="canonical" href="https://thedailypulse.space/">'), true);
+    assert.equal(home.includes('cdn.tailwindcss.com'), false);
+    assert.equal(home.includes('href="/site.css"'), true);
+    assert.equal(home.includes('href="/terms.html"'), true);
     assert.equal(home.includes('https://www.thedailypulse.space'), false);
     assert.equal(home.includes('https://pl28802746.profitablecpmratenetwork.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), false);
     assert.equal(home.includes("loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);"), true);
@@ -198,6 +201,7 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(llms.includes('daily one-page news digest'), true);
     assert.equal(llms.includes('https://thedailypulse.space/'), true);
     assert.equal(llms.includes('https://thedailypulse.space/privacy.html'), true);
+    assert.equal(llms.includes('https://thedailypulse.space/terms.html'), true);
     assert.equal(llms.includes('https://thedailypulse.space/sitemap.xml'), true);
     assert.equal(llms.includes('https://thedailypulse.space/news-sitemap.xml'), true);
     assert.equal(existsSync(new URL('../public/sitemap.xml', import.meta.url)), false);
@@ -373,11 +377,15 @@ describe('search indexing', { concurrency: 1 }, () => {
 
     const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     const privacy = readFileSync(new URL('../privacy.html', import.meta.url), 'utf8');
+    const terms = readFileSync(new URL('../terms.html', import.meta.url), 'utf8');
+    const cookies = readFileSync(new URL('../cookies.html', import.meta.url), 'utf8');
     const article = renderStoryHtml(story());
     const missing = renderMissingStoryHtml('https://thedailypulse.space/stories/aaaaaaaaaaaaaaaaaaaa');
     const pages = [
       ['home', home, 'https://thedailypulse.space/', 'The Daily Pulse: Today\'s Top News Stories in One Page'],
       ['privacy', privacy, 'https://thedailypulse.space/privacy.html', 'Privacy Policy | The Daily Pulse'],
+      ['terms', terms, 'https://thedailypulse.space/terms.html', 'Terms of Service | The Daily Pulse'],
+      ['cookies', cookies, 'https://thedailypulse.space/cookies.html', 'Cookie Policy | The Daily Pulse'],
       ['story', article, storyUrl(story().link), 'Markets rally &amp; hold | The Daily Pulse'],
       ['missing', missing, 'https://thedailypulse.space/stories/aaaaaaaaaaaaaaaaaaaa', 'Story not found | The Daily Pulse'],
     ];
@@ -404,6 +412,8 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.deepEqual(sitemapEntries([]).map((entry) => entry.loc), [
       'https://thedailypulse.space/',
       'https://thedailypulse.space/privacy.html',
+      'https://thedailypulse.space/terms.html',
+      'https://thedailypulse.space/cookies.html',
     ]);
 
     const bare = renderStoryHtml(story({ description: '', content: '', 'content:encoded': '' }));
@@ -427,6 +437,8 @@ describe('search indexing', { concurrency: 1 }, () => {
     const pages = [
       readFileSync(new URL('../index.html', import.meta.url), 'utf8'),
       readFileSync(new URL('../privacy.html', import.meta.url), 'utf8'),
+      readFileSync(new URL('../terms.html', import.meta.url), 'utf8'),
+      readFileSync(new URL('../cookies.html', import.meta.url), 'utf8'),
       renderStoryHtml(story()),
     ];
     for (const html of pages) {
