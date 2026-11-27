@@ -19,14 +19,25 @@
     render();
   }
 
+  function clearFrame(frame) {
+    if (!frame) return;
+    frame.removeAttribute('srcdoc');
+    frame.removeAttribute('src');
+    frame.removeAttribute('data-ad-loaded');
+  }
+
   function hideAds() {
     var slots = document.querySelectorAll('#adsterra-sidebar, #adsterra-infeed');
     for (var i = 0; i < slots.length; i++) {
       var slot = slots[i];
-      slot.removeAttribute('srcdoc');
-      slot.removeAttribute('src');
+      clearFrame(slot);
       slot.style.display = 'none';
       if (slot.parentElement) slot.parentElement.style.display = 'none';
+    }
+    var storySlots = document.querySelectorAll('.ad-slot');
+    for (var j = 0; j < storySlots.length; j++) {
+      clearFrame(storySlots[j].querySelector('iframe'));
+      storySlots[j].style.display = 'none';
     }
   }
 

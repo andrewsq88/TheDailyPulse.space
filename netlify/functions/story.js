@@ -1,4 +1,5 @@
 import { excerptText, getStories } from './feeds.js';
+import { AD_UNITS } from '../../public/ad-units.js';
 import {
   SITE_ORIGIN,
   PUBLICATION_NAME,
@@ -24,6 +25,44 @@ function safeHttps(value) {
     return '';
   }
   return '';
+}
+
+const STORY_BANNER = AD_UNITS.leaderboard;
+
+const STORY_AD_CSS = `
+    .ad-slot { margin: 1.25rem 0; }
+    .ad-label { margin: 0 0 0.35rem; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; color: #94a3b8; }
+    .ad-scale { width: min(100%, ${STORY_BANNER.width}px); margin: 0 auto; }
+    .ad-frame { position: relative; height: ${STORY_BANNER.height}px; overflow: hidden; background: #f1f5f9; border: 1px solid #e2e8f0; }
+    .ad-frame iframe { position: absolute; top: 0; left: 50%; width: ${STORY_BANNER.width}px; height: ${STORY_BANNER.height}px; margin: 0; border: 0; transform: translateX(-50%); transform-origin: top center; }
+    @media (min-width: 768px) {
+      .ad-slot { width: ${STORY_BANNER.width}px; margin-left: calc(50% - ${STORY_BANNER.width / 2}px); }
+      .ad-scale { width: ${STORY_BANNER.width}px; }
+    }
+    @media (max-width: 767px) {
+      .ad-scale { container-type: inline-size; width: 100%; aspect-ratio: ${STORY_BANNER.width} / ${STORY_BANNER.height}; }
+      .ad-frame { height: 100%; }
+      .ad-frame iframe { transform: translateX(-50%) scale(calc(100cqi / ${STORY_BANNER.width}px)); }
+    }
+`;
+
+function adSlot(placement) {
+  return `<aside class="ad-slot" data-ad-placement="${placement}" data-ad-unit="leaderboard" aria-label="Advertisement">
+      <p class="ad-label">Advertisement</p>
+      <div class="ad-scale"><div class="ad-frame"><iframe title="Advertisement" scrolling="no" frameborder="0" marginwidth="0" marginheight="0"></iframe></div></div>
+    </aside>`;
+}
+
+/** Short stories (under 4 body paragraphs) get the in-article unit at the midpoint. Longer stories get it after the 3rd paragraph. A second unit always closes the article. */
+export function insertStoryAds(blocks) {
+  const mid = adSlot('in-article');
+  const end = adSlot('end');
+  const parts = Array.isArray(blocks) ? blocks.filter(Boolean) : [];
+  if (parts.length === 0) return `${mid}${end}`;
+  if (parts.length === 1) return `${mid}${parts[0]}${end}`;
+  const after = parts.length < 4 ? Math.ceil(parts.length / 2) : 3;
+  const index = Math.min(parts.length, after);
+  return `${parts.slice(0, index).join('')}${mid}${parts.slice(index).join('')}${end}`;
 }
 
 const OTHER_SITES_FOOTER_CSS = `
@@ -76,6 +115,11 @@ export function renderStoryHtml(story) {
     : '';
   const image = safeHttps(story.thumbnail) || `${SITE_ORIGIN}/dp-logo.jpg`;
   const outbound = /^https?:\/\//.test(String(story.link)) ? String(story.link) : '';
+  const bodyBlocks = [];
+  if (excerpt) bodyBlocks.push(`<p class="excerpt">${escapeHtml(excerpt)}</p>`);
+  if (outbound) {
+    bodyBlocks.push(`<p>Originally published by ${escapeHtml(source)}. <a class="read" href="${escapeHtml(outbound)}" rel="noopener noreferrer">Read the original article</a>.</p>`);
+  }
   const pageTitle = `${title} | ${PUBLICATION_NAME}`;
   const metaDescription = excerpt || `${title} — ${source}`;
   const structured = siteStructuredData();
@@ -118,6 +162,7 @@ export function renderStoryHtml(story) {
   ${published ? `<meta property="article:published_time" content="${escapeHtml(published)}">` : ''}
   <script type="application/ld+json">${jsonLd(structured)}</script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/site.css">
   <style>
     body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; font-family: Inter, sans-serif; background: #f8fafc; color: #1e293b; }
     header, main { width: 100%; max-width: 42rem; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
@@ -127,8 +172,10 @@ export function renderStoryHtml(story) {
     .byline, .note { color: #64748b; font-size: 0.95rem; }
     p { line-height: 1.6; }
     a.read { color: #be123c; font-weight: 600; }
+    ${STORY_AD_CSS}
     ${OTHER_SITES_FOOTER_CSS}
   </style>
+  <script src="/consent.js" defer></script>
 </head>
 <body>
   <header>
@@ -141,11 +188,11 @@ export function renderStoryHtml(story) {
     <article>
       <h1>${escapeHtml(title)}</h1>
       <p class="byline">${dateLabel ? `<time datetime="${escapeHtml(published)}">${escapeHtml(dateLabel)}</time> · ` : ''}${escapeHtml(source)}</p>
-      ${excerpt ? `<p class="excerpt">${escapeHtml(excerpt)}</p>` : ''}
-      ${outbound ? `<p>Originally published by ${escapeHtml(source)}. <a class="read" href="${escapeHtml(outbound)}" rel="noopener noreferrer">Read the original article</a>.</p>` : ''}
+      ${insertStoryAds(bodyBlocks)}
     </article>
   </main>
   ${otherSitesFooter()}
+  <script type="module" src="/ad-loader.js"></script>
 </body>
 </html>`;
 }
