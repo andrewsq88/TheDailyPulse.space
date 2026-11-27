@@ -187,9 +187,11 @@ test('pages call the same-origin feed function and keep the live ad units', () =
   }
   assert.equal(home.includes('https://pl28802746.profitablecpmratenetwork.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), false);
   assert.equal(legacy.includes('effectivegatecpm.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), false);
+  assert.equal(legacy.includes('highperformanceformat.com'), false);
   assert.equal(home.includes('id="adsterra-sidebar"'), true);
   assert.equal(home.includes('id="adsterra-infeed"'), true);
-  assert.equal(home.includes("loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);"), true);
-  assert.equal(home.includes("loadAdsterraInIframe('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);"), true);
+  assert.equal(home.includes('src="/ad-loader.js"'), true);
+  assert.equal(home.includes('5d1d33fad1aa774f2588e74770c88134'), false);
+  assert.equal(home.includes('198695a08a60e90b59f6a5370452a9fb'), false);
   assert.equal(legacy.includes('id="adsterra-sidebar"'), false);
 });

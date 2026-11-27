@@ -183,9 +183,11 @@ describe('search indexing', { concurrency: 1 }, () => {
     assert.equal(home.includes('href="/terms.html"'), true);
     assert.equal(home.includes('https://www.thedailypulse.space'), false);
     assert.equal(home.includes('https://pl28802746.profitablecpmratenetwork.com/c9/04/cf/c904cf8b83d6b3ab17b034c8f662e310.js'), false);
-    assert.equal(home.includes("loadAdsterraInIframe('adsterra-sidebar', '198695a08a60e90b59f6a5370452a9fb', 160, 600);"), true);
-    assert.equal(home.includes("loadAdsterraInIframe('adsterra-infeed', '5d1d33fad1aa774f2588e74770c88134', 728, 90);"), true);
-    assert.equal(home.includes('https://www.highperformanceformat.com/'), true);
+    assert.equal(home.includes('src="/ad-loader.js"'), true);
+    assert.equal(home.includes('5d1d33fad1aa774f2588e74770c88134'), false);
+    assert.equal(home.includes('198695a08a60e90b59f6a5370452a9fb'), false);
+    const adUnits = readFileSync(new URL('../public/ad-units.js', import.meta.url), 'utf8');
+    assert.equal(adUnits.includes('https://www.highperformanceformat.com'), true);
     assert.equal(home.includes('name="google-site-verification" content="2N901cMjWSixwZhx50m3ddt9PTHsdCrLeDFb_9-6raQ"'), true);
     assert.equal((home.match(/<html/gi) || []).length, 1);
     assert.equal((home.match(/<\/html>/gi) || []).length, 1);
